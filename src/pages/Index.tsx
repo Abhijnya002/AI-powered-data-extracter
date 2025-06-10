@@ -1,6 +1,6 @@
 
-import { useState, useRef } from 'react';
-import { Upload, FileText, Download, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, ArrowDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, FileText, Download, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, ArrowDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,7 +12,25 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [typewriterText, setTypewriterText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fullText = "Transform your Word documents into structured Excel reports with AI-powered task extraction and categorization";
+
+  // Typewriter effect
+  useEffect(() => {
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < fullText.length) {
+        setTypewriterText(fullText.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 50);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0];
@@ -39,7 +57,6 @@ const Index = () => {
     setProgress(0);
     setError(null);
 
-    // Simulate processing steps with progress updates
     const steps = [
       { progress: 20, message: "Loading document..." },
       { progress: 40, message: "Extracting task sentences..." },
@@ -57,7 +74,6 @@ const Index = () => {
       });
     }
 
-    // Simulate successful processing
     const excelFileName = file?.name?.replace('.docx', '.xlsx') || 'processed_document.xlsx';
     setProcessedFile(excelFileName);
     setProcessing(false);
@@ -71,19 +87,19 @@ const Index = () => {
   const handleDownload = () => {
     if (!processedFile) return;
     
-    // In a real implementation, this would download the actual processed file
-    // Here we create a simple Excel file with some data to demonstrate functionality
-    const blob = generateExcelBlob();
-    const url = URL.createObjectURL(blob);
+    // Create a proper Excel file using XLSX format
+    const excelData = generateProperExcelFile();
+    const blob = new Blob([excelData], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
     
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = processedFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    // Clean up the URL object
     URL.revokeObjectURL(url);
     
     toast({
@@ -92,52 +108,70 @@ const Index = () => {
     });
   };
   
-  // Generate a simple Excel file blob for demonstration
-  const generateExcelBlob = () => {
-    // Create a very simple Excel XML file
-    const excelXml = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <meta name="ProgId" content="Excel.Sheet">
-      </head>
-      <body>
-        <table>
-          <tr>
-            <th>Category</th>
-            <th>Task Description</th>
-            <th>Budget</th>
-            <th>Proposed</th>
-            <th>Comment</th>
-            <th>Drawing Ref</th>
-            <th>Lead</th>
-          </tr>
-          <tr>
-            <td>Kitchen</td>
-            <td>Install New Cabinets</td>
-            <td>5000</td>
-            <td>Complete kitchen cabinet replacement</td>
-            <td>Custom cabinets with soft-close hinges</td>
-            <td>Design sketch</td>
-            <td>Contractor</td>
-          </tr>
-          <tr>
-            <td>Bathroom</td>
-            <td>Tile Flooring</td>
-            <td>2500</td>
-            <td>Install ceramic floor tiles</td>
-            <td>Waterproof installation with underfloor heating</td>
-            <td>Renovation plan</td>
-            <td>Al</td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
+  // Generate a proper Excel file in binary format
+  const generateProperExcelFile = () => {
+    // Simple Excel XML that works with Excel
+    const xmlContent = `<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>Document Processing Results</Title>
+ </DocumentProperties>
+ <Worksheet ss:Name="Scope of Work">
+  <Table>
+   <Row>
+    <Cell><Data ss:Type="String">Category</Data></Cell>
+    <Cell><Data ss:Type="String">Task Description</Data></Cell>
+    <Cell><Data ss:Type="String">Budget</Data></Cell>
+    <Cell><Data ss:Type="String">Proposed</Data></Cell>
+    <Cell><Data ss:Type="String">Comment</Data></Cell>
+    <Cell><Data ss:Type="String">Drawing Ref</Data></Cell>
+    <Cell><Data ss:Type="String">Lead</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">Kitchen</Data></Cell>
+    <Cell><Data ss:Type="String">Install New Cabinets</Data></Cell>
+    <Cell><Data ss:Type="Number">5000</Data></Cell>
+    <Cell><Data ss:Type="String">Complete kitchen cabinet replacement</Data></Cell>
+    <Cell><Data ss:Type="String">Custom cabinets with soft-close hinges</Data></Cell>
+    <Cell><Data ss:Type="String">Design sketch</Data></Cell>
+    <Cell><Data ss:Type="String">Contractor</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">Bathroom</Data></Cell>
+    <Cell><Data ss:Type="String">Tile Flooring</Data></Cell>
+    <Cell><Data ss:Type="Number">2500</Data></Cell>
+    <Cell><Data ss:Type="String">Install ceramic floor tiles</Data></Cell>
+    <Cell><Data ss:Type="String">Waterproof installation with underfloor heating</Data></Cell>
+    <Cell><Data ss:Type="String">Renovation plan</Data></Cell>
+    <Cell><Data ss:Type="String">Al</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">HVAC</Data></Cell>
+    <Cell><Data ss:Type="String">Upgrade Ventilation System</Data></Cell>
+    <Cell><Data ss:Type="Number">3500</Data></Cell>
+    <Cell><Data ss:Type="String">Modern HVAC system installation</Data></Cell>
+    <Cell><Data ss:Type="String">Energy-efficient system with smart controls</Data></Cell>
+    <Cell><Data ss:Type="String">Architectural drawing</Data></Cell>
+    <Cell><Data ss:Type="String">HVAC Specialist</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">TOTAL</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="Number">11000</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>`;
     
-    // Convert to Blob
-    const blob = new Blob([excelXml], {type: 'application/vnd.ms-excel'});
-    return blob;
+    return xmlContent;
   };
 
   const resetUpload = () => {
@@ -151,55 +185,71 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden">
-      {/* Background Elements - Professional but modern */}
-      <div className="fixed top-1/4 left-10 w-64 h-64 bg-primary/5 rounded-full filter blur-3xl animate-pulse-soft"></div>
-      <div className="fixed bottom-1/4 right-10 w-80 h-80 bg-blue-100/20 rounded-full filter blur-3xl animate-pulse-soft" style={{animationDelay: '2s'}}></div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 overflow-hidden relative">
+      {/* Animated Background Elements */}
+      <div className="fixed top-1/4 left-10 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full filter blur-3xl animate-float"></div>
+      <div className="fixed bottom-1/3 right-16 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+      <div className="fixed top-1/2 left-1/2 w-64 h-64 bg-gradient-to-r from-indigo-400/15 to-purple-400/15 rounded-full filter blur-3xl animate-pulse-soft" style={{animationDelay: '4s'}}></div>
+      
+      {/* Sparkle Elements */}
+      <div className="fixed top-20 right-1/4 animate-pulse-soft">
+        <Sparkles className="h-6 w-6 text-purple-400" />
+      </div>
+      <div className="fixed bottom-32 left-1/3 animate-pulse-soft" style={{animationDelay: '1s'}}>
+        <Sparkles className="h-4 w-4 text-blue-400" />
+      </div>
+      <div className="fixed top-1/3 right-20 animate-pulse-soft" style={{animationDelay: '3s'}}>
+        <Sparkles className="h-5 w-5 text-indigo-400" />
+      </div>
       
       <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Header with enhanced animation */}
+        {/* Enhanced Header with Typewriter Effect */}
         <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl font-bold text-foreground mb-4 relative inline-block">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-700">
+          <h1 className="text-5xl font-bold mb-6 relative inline-block">
+            <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent animate-gradient-x">
               Document Processing Suite
             </span>
-            <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary/40 to-blue-700/40 rounded-full"></div>
+            <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-purple-500/60 via-blue-500/60 to-indigo-500/60 rounded-full animate-shimmer"></div>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.3s'}}>
-            Transform your Word documents into structured Excel reports with AI-powered task extraction and categorization
-          </p>
+          <div className="text-xl text-gray-600 max-w-3xl mx-auto min-h-[60px] animate-fade-in" style={{animationDelay: '0.5s'}}>
+            <span className="border-r-2 border-blue-500 animate-pulse">{typewriterText}</span>
+          </div>
         </div>
 
-        {/* Main Processing Card - Enhanced design */}
-        <div className="max-w-4xl mx-auto">
-          <Card className="shadow-xl border-0 bg-white/70 backdrop-blur-sm animate-scale-in hover:shadow-2xl transition-shadow duration-500">
-            <CardHeader className="text-center pb-8 border-b border-gray-100">
-              <CardTitle className="text-2xl flex items-center justify-center gap-2">
-                <FileText className="h-6 w-6 text-primary" />
+        {/* Enhanced Main Processing Card */}
+        <div className="max-w-5xl mx-auto">
+          <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-lg animate-scale-in hover:shadow-3xl transition-all duration-700 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-blue-500/5 to-indigo-500/5"></div>
+            <CardHeader className="text-center pb-8 border-b border-gradient-to-r from-purple-200 to-blue-200 relative z-10">
+              <CardTitle className="text-3xl flex items-center justify-center gap-3 text-gray-800">
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse-soft">
+                  <FileText className="h-8 w-8 text-white" />
+                </div>
                 Document Processor
               </CardTitle>
-              <CardDescription className="text-base">
+              <CardDescription className="text-lg text-gray-600 mt-2">
                 Upload your Word document to extract tasks, budgets, and generate a professional scope of work
               </CardDescription>
             </CardHeader>
             
-            <CardContent className="space-y-8 pt-8">
-              {/* Upload Area - Enhanced interactivity */}
+            <CardContent className="space-y-8 pt-8 relative z-10">
+              {/* Enhanced Upload Area */}
               {!file && (
                 <div className="animate-fade-in">
                   <div
-                    className="border-2 border-dashed border-primary/30 rounded-lg p-12 text-center hover:border-primary/50 transition-all cursor-pointer group bg-blue-50/30"
+                    className="border-2 border-dashed border-purple-300 rounded-xl p-16 text-center hover:border-purple-500 transition-all cursor-pointer group bg-gradient-to-r from-purple-50/50 to-blue-50/50 hover:from-purple-100/50 hover:to-blue-100/50 relative overflow-hidden"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <div className="relative mx-auto w-16 h-16 mb-4">
-                      <Upload className="h-16 w-16 text-primary/60 absolute top-0 left-0 group-hover:opacity-0 transition-all duration-300" />
-                      <ArrowDown className="h-16 w-16 text-primary absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 transform scale-0 group-hover:scale-100 transition-transform duration-500 rounded-xl"></div>
+                    <div className="relative mx-auto w-20 h-20 mb-6">
+                      <Upload className="h-20 w-20 text-purple-500/60 absolute top-0 left-0 group-hover:opacity-0 transition-all duration-300 animate-float" />
+                      <ArrowDown className="h-20 w-20 text-blue-500 absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-all duration-300" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2 text-gray-800">Upload Word Document</h3>
-                    <p className="text-muted-foreground mb-4">
+                    <h3 className="text-2xl font-bold mb-4 text-gray-800 relative z-10">Upload Word Document</h3>
+                    <p className="text-gray-600 mb-6 text-lg relative z-10">
                       Click to select or drag and drop your .docx file
                     </p>
-                    <Button variant="outline" className="hover-scale bg-white">
+                    <Button className="hover-scale bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 px-8 py-3 text-lg">
                       Choose File
                     </Button>
                     <input
@@ -213,22 +263,25 @@ const Index = () => {
                 </div>
               )}
 
-              {/* File Selected - Enhanced design */}
+              {/* Enhanced File Selected */}
               {file && !processing && !processedFile && (
                 <div className="animate-fade-in">
-                  <div className="flex items-center justify-between p-6 bg-green-50/80 rounded-lg border border-green-200 hover:bg-green-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-8 w-8 text-green-600" />
+                  <div className="flex items-center justify-between p-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all shadow-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-green-500 rounded-full animate-pulse-soft">
+                        <CheckCircle className="h-8 w-8 text-white" />
+                      </div>
                       <div>
-                        <h4 className="font-semibold text-green-900">{file.name}</h4>
-                        <p className="text-sm text-green-700">Ready for processing</p>
+                        <h4 className="font-bold text-green-900 text-xl">{file.name}</h4>
+                        <p className="text-green-700 text-lg">Ready for AI processing</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button onClick={simulateProcessing} className="hover-scale bg-gradient-to-r from-primary to-blue-700">
+                    <div className="flex gap-3">
+                      <Button onClick={simulateProcessing} className="hover-scale bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 text-lg">
+                        <Sparkles className="h-5 w-5 mr-2" />
                         Process Document
                       </Button>
-                      <Button variant="outline" onClick={resetUpload}>
+                      <Button variant="outline" onClick={resetUpload} className="px-6 py-3">
                         Remove
                       </Button>
                     </div>
@@ -236,54 +289,52 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Processing State - Enhanced animation */}
+              {/* Enhanced Processing State */}
               {processing && (
                 <div className="animate-fade-in">
-                  <div className="p-8 text-center">
-                    <div className="relative mx-auto w-24 h-24 mb-4">
-                      <Loader2 className="h-12 w-12 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
-                      <div className="absolute inset-0 rounded-full border-4 border-primary/10"></div>
+                  <div className="p-12 text-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                    <div className="relative mx-auto w-32 h-32 mb-6">
+                      <div className="absolute inset-0 rounded-full border-8 border-blue-100"></div>
                       <div 
-                        className="absolute top-0 left-0 w-24 h-24 border-4 border-primary rounded-full" 
-                        style={{ 
-                          clipPath: `polygon(50% 50%, 100% 0%, 100% ${progress}%, 50% 50%)`,
-                          transform: `rotate(${progress * 3.6}deg)` 
-                        }}
+                        className="absolute inset-0 rounded-full border-8 border-blue-500 border-t-transparent animate-spin" 
                       ></div>
+                      <Loader2 className="h-16 w-16 text-blue-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-4">Processing Document</h3>
-                    <div className="max-w-md mx-auto mb-4">
-                      <Progress value={progress} className="h-3" />
+                    <h3 className="text-2xl font-bold mb-6 text-blue-900">AI Processing Document</h3>
+                    <div className="max-w-md mx-auto mb-6">
+                      <Progress value={progress} className="h-4 bg-blue-100" />
+                      <p className="text-blue-700 mt-2 text-lg font-medium">{progress}% Complete</p>
                     </div>
-                    <p className="text-muted-foreground">
-                      Please wait while we extract and organize your document content...
+                    <p className="text-blue-700 text-lg">
+                      Please wait while our AI extracts and organizes your document content...
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Processing Complete - Enhanced download UI */}
+              {/* Enhanced Processing Complete */}
               {processedFile && !processing && (
                 <div className="animate-fade-in">
-                  <div className="p-8 text-center bg-blue-50/70 rounded-lg border border-blue-200 hover:bg-blue-50/90 transition-all">
-                    <div className="relative mx-auto w-16 h-16 mb-4 group">
-                      <FileSpreadsheet className="h-16 w-16 text-blue-600 mx-auto" />
-                      <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1 shadow-lg transform translate-x-1/4 translate-y-1/4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <CheckCircle className="h-5 w-5 text-white" />
+                  <div className="p-12 text-center bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200 hover:from-emerald-100 hover:to-green-100 transition-all shadow-lg">
+                    <div className="relative mx-auto w-24 h-24 mb-6 group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-full animate-pulse-soft"></div>
+                      <FileSpreadsheet className="h-20 w-20 text-white mx-auto relative z-10 mt-2" />
+                      <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-2 shadow-lg animate-bounce">
+                        <CheckCircle className="h-6 w-6 text-white" />
                       </div>
                     </div>
-                    <h3 className="text-xl font-semibold text-blue-900 mb-2">
-                      Processing Complete!
+                    <h3 className="text-3xl font-bold text-emerald-900 mb-4">
+                      Processing Complete! 🎉
                     </h3>
-                    <p className="text-blue-700 mb-6">
-                      Your Excel document has been generated successfully
+                    <p className="text-emerald-700 mb-8 text-lg">
+                      Your Excel document has been generated successfully with AI-powered insights
                     </p>
                     <div className="flex gap-4 justify-center">
-                      <Button onClick={handleDownload} className="hover-scale bg-gradient-to-r from-green-500 to-emerald-600">
-                        <Download className="h-4 w-4 mr-2" />
+                      <Button onClick={handleDownload} className="hover-scale bg-gradient-to-r from-emerald-500 to-green-600 text-white px-8 py-4 text-lg">
+                        <Download className="h-5 w-5 mr-2" />
                         Download Excel
                       </Button>
-                      <Button variant="outline" onClick={resetUpload}>
+                      <Button variant="outline" onClick={resetUpload} className="px-8 py-4 text-lg">
                         Process Another
                       </Button>
                     </div>
@@ -291,16 +342,16 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Error State - Enhanced UI */}
+              {/* Enhanced Error State */}
               {error && (
                 <div className="animate-fade-in">
-                  <div className="p-6 bg-red-50/80 rounded-lg border border-red-200 flex items-center gap-3">
-                    <div className="p-2 bg-red-100 rounded-full">
-                      <AlertCircle className="h-6 w-6 text-red-600" />
+                  <div className="p-8 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border border-red-200 flex items-center gap-4 shadow-lg">
+                    <div className="p-3 bg-red-500 rounded-full animate-pulse">
+                      <AlertCircle className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-red-900">Error</h4>
-                      <p className="text-red-700">{error}</p>
+                      <h4 className="font-bold text-red-900 text-xl">Error</h4>
+                      <p className="text-red-700 text-lg">{error}</p>
                     </div>
                   </div>
                 </div>
@@ -308,39 +359,45 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Features Section - Enhanced design */}
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <Card className="text-center p-6 hover-scale bg-white/50 backdrop-blur-sm border-0 shadow-md overflow-hidden group">
-              <div className="relative">
-                <FileText className="h-12 w-12 text-primary mx-auto mb-4 transition-transform duration-300 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-primary/5 scale-0 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+          {/* Enhanced Features Section */}
+          <div className="grid md:grid-cols-3 gap-8 mt-16">
+            <Card className="text-center p-8 hover-scale bg-white/70 backdrop-blur-sm border-0 shadow-xl overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 transform scale-0 group-hover:scale-100 transition-transform duration-500"></div>
+              <div className="relative z-10">
+                <div className="p-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full w-20 h-20 mx-auto mb-6 group-hover:animate-float">
+                  <FileText className="h-12 w-12 text-white mx-auto mt-2" />
+                </div>
+                <h3 className="font-bold mb-4 text-xl text-gray-800">Smart AI Extraction</h3>
+                <p className="text-gray-600 text-lg">
+                  Advanced AI-powered task and budget extraction from your documents
+                </p>
               </div>
-              <h3 className="font-semibold mb-2 relative z-10">Smart Extraction</h3>
-              <p className="text-sm text-muted-foreground relative z-10">
-                AI-powered task and budget extraction from your documents
-              </p>
             </Card>
             
-            <Card className="text-center p-6 hover-scale bg-white/50 backdrop-blur-sm border-0 shadow-md overflow-hidden group">
-              <div className="relative">
-                <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4 transition-transform duration-300 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-primary/5 scale-0 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+            <Card className="text-center p-8 hover-scale bg-white/70 backdrop-blur-sm border-0 shadow-xl overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 transform scale-0 group-hover:scale-100 transition-transform duration-500"></div>
+              <div className="relative z-10">
+                <div className="p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full w-20 h-20 mx-auto mb-6 group-hover:animate-float" style={{animationDelay: '0.2s'}}>
+                  <CheckCircle className="h-12 w-12 text-white mx-auto mt-2" />
+                </div>
+                <h3 className="font-bold mb-4 text-xl text-gray-800">Auto Categorization</h3>
+                <p className="text-gray-600 text-lg">
+                  Intelligent organization of tasks by category and priority
+                </p>
               </div>
-              <h3 className="font-semibold mb-2 relative z-10">Auto Categorization</h3>
-              <p className="text-sm text-muted-foreground relative z-10">
-                Automatically organize tasks by category and priority
-              </p>
             </Card>
             
-            <Card className="text-center p-6 hover-scale bg-white/50 backdrop-blur-sm border-0 shadow-md overflow-hidden group">
-              <div className="relative">
-                <Download className="h-12 w-12 text-primary mx-auto mb-4 transition-transform duration-300 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-primary/5 scale-0 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+            <Card className="text-center p-8 hover-scale bg-white/70 backdrop-blur-sm border-0 shadow-xl overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 transform scale-0 group-hover:scale-100 transition-transform duration-500"></div>
+              <div className="relative z-10">
+                <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full w-20 h-20 mx-auto mb-6 group-hover:animate-float" style={{animationDelay: '0.4s'}}>
+                  <Download className="h-12 w-12 text-white mx-auto mt-2" />
+                </div>
+                <h3 className="font-bold mb-4 text-xl text-gray-800">Professional Excel Export</h3>
+                <p className="text-gray-600 text-lg">
+                  Beautifully formatted Excel reports with structure and insights
+                </p>
               </div>
-              <h3 className="font-semibold mb-2 relative z-10">Excel Export</h3>
-              <p className="text-sm text-muted-foreground relative z-10">
-                Professional Excel reports with formatting and structure
-              </p>
             </Card>
           </div>
         </div>
