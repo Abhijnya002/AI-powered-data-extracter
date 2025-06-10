@@ -113,6 +113,38 @@ export default {
 					'50%': {
 						opacity: '0.8'
 					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-10px)'
+					}
+				},
+				'spin-slow': {
+					'0%': {
+						transform: 'rotate(0deg)'
+					},
+					'100%': {
+						transform: 'rotate(360deg)'
+					}
+				},
+				'gradient-x': {
+					'0%, 100%': {
+						'background-position': '0% 50%'
+					},
+					'50%': {
+						'background-position': '100% 50%'
+					}
+				},
+				'shimmer': {
+					'0%': {
+						'background-position': '-40rem 0'
+					},
+					'100%': {
+						'background-position': '40rem 0'
+					}
 				}
 			},
 			animation: {
@@ -120,7 +152,11 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.6s ease-out',
 				'scale-in': 'scale-in 0.4s ease-out',
-				'pulse-soft': 'pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+				'pulse-soft': 'pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'float': 'float 3s ease-in-out infinite',
+				'spin-slow': 'spin-slow 10s linear infinite',
+				'gradient-x': 'gradient-x 3s ease infinite',
+				'shimmer': 'shimmer 2s linear infinite'
 			}
 		}
 	},
@@ -131,8 +167,20 @@ export default {
 				'.hover-scale': {
 					'@apply transition-all duration-200 hover:scale-105 hover:shadow-lg': {},
 				},
+				'.hover-scale-sm': {
+					'@apply transition-all duration-200 hover:scale-102 hover:shadow-md': {},
+				},
 				'.glass': {
 					'@apply bg-white/20 backdrop-blur-md border border-white/30': {},
+				},
+				'.glass-card': {
+					'@apply bg-white/70 backdrop-blur-md border border-white/50 shadow-xl': {},
+				},
+				'.text-gradient': {
+					'@apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-700': {},
+				},
+				'.animate-shimmer': {
+					'@apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent': {},
 				}
 			}
 			addUtilities(newUtilities)
