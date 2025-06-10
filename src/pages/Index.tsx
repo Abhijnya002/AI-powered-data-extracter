@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Download, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, ArrowDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -84,96 +83,72 @@ const Index = () => {
     });
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!processedFile) return;
     
-    // Create a proper Excel file using XLSX format
-    const excelData = generateProperExcelFile();
-    const blob = new Blob([excelData], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-    });
-    
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = processedFile;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Download started",
-      description: "Your processed Excel file is downloading",
-    });
+    try {
+      // Create proper Excel file using XLSX library approach
+      const { utils, write } = await import('xlsx-js-style');
+      
+      // Sample data structure
+      const worksheetData = [
+        ['Category', 'Task Description', 'Budget', 'Proposed', 'Comment', 'Drawing Ref', 'Lead'],
+        ['Kitchen', 'Install New Cabinets', 5000, 'Complete kitchen cabinet replacement', 'Custom cabinets with soft-close hinges', 'Design sketch', 'Contractor'],
+        ['Bathroom', 'Tile Flooring', 2500, 'Install ceramic floor tiles', 'Waterproof installation with underfloor heating', 'Renovation plan', 'Al'],
+        ['HVAC', 'Upgrade Ventilation System', 3500, 'Modern HVAC system installation', 'Energy-efficient system with smart controls', 'Architectural drawing', 'HVAC Specialist'],
+        ['TOTAL', '', 11000, '', '', '', '']
+      ];
+
+      const worksheet = utils.aoa_to_sheet(worksheetData);
+      const workbook = utils.book_new();
+      utils.book_append_sheet(workbook, worksheet, 'Scope of Work');
+
+      // Generate buffer
+      const excelBuffer = write(workbook, { bookType: 'xlsx', type: 'array' });
+      
+      // Create blob and download
+      const blob = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = processedFile;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download started",
+        description: "Your processed Excel file is downloading",
+      });
+    } catch (error) {
+      // Fallback to simple CSV if XLSX library is not available
+      const csvData = `Category,Task Description,Budget,Proposed,Comment,Drawing Ref,Lead
+Kitchen,Install New Cabinets,5000,Complete kitchen cabinet replacement,Custom cabinets with soft-close hinges,Design sketch,Contractor
+Bathroom,Tile Flooring,2500,Install ceramic floor tiles,Waterproof installation with underfloor heating,Renovation plan,Al
+HVAC,Upgrade Ventilation System,3500,Modern HVAC system installation,Energy-efficient system with smart controls,Architectural drawing,HVAC Specialist
+TOTAL,,11000,,,,,`;
+      
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = processedFile.replace('.xlsx', '.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download started (CSV format)",
+        description: "Excel library not available, downloading as CSV",
+      });
+    }
   };
   
-  // Generate a proper Excel file in binary format
-  const generateProperExcelFile = () => {
-    // Simple Excel XML that works with Excel
-    const xmlContent = `<?xml version="1.0"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
- <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
-  <Title>Document Processing Results</Title>
- </DocumentProperties>
- <Worksheet ss:Name="Scope of Work">
-  <Table>
-   <Row>
-    <Cell><Data ss:Type="String">Category</Data></Cell>
-    <Cell><Data ss:Type="String">Task Description</Data></Cell>
-    <Cell><Data ss:Type="String">Budget</Data></Cell>
-    <Cell><Data ss:Type="String">Proposed</Data></Cell>
-    <Cell><Data ss:Type="String">Comment</Data></Cell>
-    <Cell><Data ss:Type="String">Drawing Ref</Data></Cell>
-    <Cell><Data ss:Type="String">Lead</Data></Cell>
-   </Row>
-   <Row>
-    <Cell><Data ss:Type="String">Kitchen</Data></Cell>
-    <Cell><Data ss:Type="String">Install New Cabinets</Data></Cell>
-    <Cell><Data ss:Type="Number">5000</Data></Cell>
-    <Cell><Data ss:Type="String">Complete kitchen cabinet replacement</Data></Cell>
-    <Cell><Data ss:Type="String">Custom cabinets with soft-close hinges</Data></Cell>
-    <Cell><Data ss:Type="String">Design sketch</Data></Cell>
-    <Cell><Data ss:Type="String">Contractor</Data></Cell>
-   </Row>
-   <Row>
-    <Cell><Data ss:Type="String">Bathroom</Data></Cell>
-    <Cell><Data ss:Type="String">Tile Flooring</Data></Cell>
-    <Cell><Data ss:Type="Number">2500</Data></Cell>
-    <Cell><Data ss:Type="String">Install ceramic floor tiles</Data></Cell>
-    <Cell><Data ss:Type="String">Waterproof installation with underfloor heating</Data></Cell>
-    <Cell><Data ss:Type="String">Renovation plan</Data></Cell>
-    <Cell><Data ss:Type="String">Al</Data></Cell>
-   </Row>
-   <Row>
-    <Cell><Data ss:Type="String">HVAC</Data></Cell>
-    <Cell><Data ss:Type="String">Upgrade Ventilation System</Data></Cell>
-    <Cell><Data ss:Type="Number">3500</Data></Cell>
-    <Cell><Data ss:Type="String">Modern HVAC system installation</Data></Cell>
-    <Cell><Data ss:Type="String">Energy-efficient system with smart controls</Data></Cell>
-    <Cell><Data ss:Type="String">Architectural drawing</Data></Cell>
-    <Cell><Data ss:Type="String">HVAC Specialist</Data></Cell>
-   </Row>
-   <Row>
-    <Cell><Data ss:Type="String">TOTAL</Data></Cell>
-    <Cell><Data ss:Type="String"></Data></Cell>
-    <Cell><Data ss:Type="Number">11000</Data></Cell>
-    <Cell><Data ss:Type="String"></Data></Cell>
-    <Cell><Data ss:Type="String"></Data></Cell>
-    <Cell><Data ss:Type="String"></Data></Cell>
-    <Cell><Data ss:Type="String"></Data></Cell>
-   </Row>
-  </Table>
- </Worksheet>
-</Workbook>`;
-    
-    return xmlContent;
-  };
-
   const resetUpload = () => {
     setFile(null);
     setProcessedFile(null);
@@ -209,7 +184,7 @@ const Index = () => {
             <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent animate-gradient-x">
               Document Processing Suite
             </span>
-            <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-purple-500/60 via-blue-500/60 to-indigo-500/60 rounded-full animate-shimmer"></div>
+            <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-purple-500/60 via-blue-500/60 to-indigo-500/60 rounded-full shimmer-effect"></div>
           </h1>
           <div className="text-xl text-gray-600 max-w-3xl mx-auto min-h-[60px] animate-fade-in" style={{animationDelay: '0.5s'}}>
             <span className="border-r-2 border-blue-500 animate-pulse">{typewriterText}</span>

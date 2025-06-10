@@ -157,7 +157,6 @@ button, a, [role="button"], .hover-scale {
 .btn-gradient {
   @apply bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white transition-all duration-500 shadow-lg hover:shadow-xl;
   background-size: 200% 100%;
-  animation: gradient-x 3s ease infinite;
 }
 
 /* Enhanced animated underline effect */
@@ -177,7 +176,6 @@ button, a, [role="button"], .hover-scale {
   transform: scaleX(0);
   transform-origin: bottom right;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: gradient-x 2s ease infinite;
 }
 
 .link-underline:hover::after {
@@ -273,4 +271,39 @@ input:focus, select:focus, textarea:focus {
 
 .float-gentle {
   animation: float-gentle 6s ease-in-out infinite;
+}
+
+/* Shimmer effect without utility */
+@keyframes shimmer {
+  0% { background-position: -40rem 0; }
+  100% { background-position: 40rem 0; }
+}
+
+.shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 40rem 100%;
+  animation: shimmer 2s linear infinite;
+  z-index: 1;
+}
+
+/* Gradient text animation */
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
 }
