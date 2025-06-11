@@ -1,69 +1,25 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { createReadStream, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { spawn } from 'child_process';
+import os
+import sys
+from docx import Document
+import pandas as pd
+from openpyxl import Workbook
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+def process_docx(file_path):
+    doc = Document(file_path)
+    text = "\n".join([para.text for para in doc.paragraphs])
+    
+    # Your processing logic here
+    # Example: Extract tasks and budgets
+    tasks = [para.text for para in doc.paragraphs if len(para.text) > 20]
+    
+    # Create Excel output
+    output_path = os.path.join(os.path.dirname(file_path), 'processed_output.xlsx')
+    df = pd.DataFrame({'Tasks': tasks})
+    df.to_excel(output_path, index=False)
+    
+    return output_path
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    // Parse the form data
-    const formData = await new Promise<any>((resolve, reject) => {
-      const chunks: any[] = [];
-      req.on('data', (chunk) => chunks.push(chunk));
-      req.on('end', () => {
-        const body = Buffer.concat(chunks).toString();
-        resolve(body);
-      });
-      req.on('error', reject);
-    });
-
-    // Save the file temporarily
-    const tempFilePath = join(tmpdir(), `upload-${Date.now()}.docx`);
-    require('fs').writeFileSync(tempFilePath, formData);
-
-    // Process with Python
-    const pythonProcess = spawn('python3', [
-      join(process.cwd(), 'scripts', 'process_docx.py'),
-      tempFilePath
-    ]);
-
-    let resultData = '';
-    pythonProcess.stdout.on('data', (data) => {
-      resultData += data.toString();
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-      console.error(`Python error: ${data}`);
-    });
-
-    await new Promise((resolve) => {
-      pythonProcess.on('close', resolve);
-    });
-
-    const outputPath = resultData.trim();
-    const fileStream = createReadStream(outputPath);
-
-    // Clean up
-    unlinkSync(tempFilePath);
-    unlinkSync(outputPath);
-
-    // Send the file
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=processed_output.xlsx');
-    fileStream.pipe(res);
-
-  } catch (error) {
-    console.error('Processing error:', error);
-    res.status(500).json({ error: 'Failed to process document' });
-  }
-}
+if __name__ == '__main__':
+    input_file = sys.argv[1]
+    output_file = process_docx(input_file)
+    print(output_file)
