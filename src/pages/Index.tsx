@@ -436,71 +436,67 @@ const Index = () => {
     }
   };
 
-  const processDocument = async () => {
-    if (!file) return;
-    
-    setProcessing(true);
-    setProgress(0);
-    setError(null);
+  // Update the processDocument function in your existing Index.tsx:
+const processDocument = async () => {
+  if (!file) return;
+  
+  setProcessing(true);
+  setProgress(0);
+  setError(null);
 
-    try {
-      // Create FormData and append the file
-      const formData = new FormData();
-      formData.append('file', file);
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
 
-      // Simulate progress updates
-      const progressUpdates = [20, 40, 60, 80, 100];
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          const next = prev + 20;
-          if (next >= 100) {
-            clearInterval(progressInterval);
-            return 100;
-          }
-          return next;
-        });
-      }, 1500);
-
-      // Send to backend
-      const response = await fetch('/api/process-docx', {
-        method: 'POST',
-        body: formData,
+    // Progress simulation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        const next = prev + 20;
+        if (next >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return next;
       });
+    }, 1500);
 
-      clearInterval(progressInterval);
+    const response = await fetch('/api/process-docx', {
+      method: 'POST',
+      body: file, // Send file directly
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to process document');
-      }
+    clearInterval(progressInterval);
 
-      const result = await response.json();
-      
-      // Create download URL for the processed file
-      const blob = await fetch(result.fileUrl).then(res => res.blob());
-      const url = URL.createObjectURL(blob);
-      
-      setProcessedFile({
-        url,
-        filename: file.name.replace('.docx', '_processed.xlsx')
-      });
-      
-      toast({
-        title: "Processing complete!",
-        description: "Your Excel document is ready for download",
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      toast({
-        title: "Processing failed",
-        description: "There was an error processing your document",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessing(false);
-      setProgress(100);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to process document');
     }
-  };
 
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    
+    setProcessedFile({
+      url,
+      filename: `processed_${file.name.replace('.docx', '.xlsx')}`
+    });
+    
+    toast({
+      title: "Processing complete!",
+      description: "Your Excel document is ready for download",
+    });
+  } catch (err) {
+    console.error('Processing error:', err);
+    setError(err instanceof Error ? err.message : 'Failed to process document');
+    toast({
+      title: "Processing failed",
+      description: "There was an error processing your document",
+      variant: "destructive",
+    });
+  } finally {
+    setProcessing(false);
+    setProgress(100);
+  }
+};
   const handleDownload = () => {
     if (!processedFile) return;
     
