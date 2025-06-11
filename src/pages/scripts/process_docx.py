@@ -22,4 +22,4 @@ def process_docx(file_path):
 if __name__ == '__main__':
     input_file = sys.argv[1]
     output_file = process_docx(input_file)
-    print(output_file)
+    print(output_file)  # Don't print anything else
