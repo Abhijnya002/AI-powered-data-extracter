@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+      {
+        "source": "/api/(.*)",
+        "destination": "https://ai-powered-data-extracter.onrender.com/api/$1"
+      }
+    ]
+  }
+  
