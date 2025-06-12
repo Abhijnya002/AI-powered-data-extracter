@@ -8,7 +8,7 @@ from transformers import pipeline
 import torch
 
 # --- Local Model Setup with Lighter Models ---
-summarizer = pipeline("summarization", model="sshleifer/tiny-distilbart-cnn-6-6", device=0 if torch.cuda.is_available() else -1)
+summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6", device=0 if torch.cuda.is_available() else -1)
 title_gen = pipeline("text2text-generation", model="google/flan-t5-small", device=0 if torch.cuda.is_available() else -1)
 
 # --- File Processing ---
@@ -184,9 +184,10 @@ def process_docx():
         return send_file(output_path, as_attachment=True)
 
     except Exception as e:
-        traceback.print_exc()
+        print("❌ Error occurred:", e)
+        traceback.print_exc()  # Add this line to print the stack trace
         return f"Backend error: {str(e)}", 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
