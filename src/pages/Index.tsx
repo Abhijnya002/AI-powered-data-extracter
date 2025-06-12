@@ -74,7 +74,7 @@ const Index = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:5000/api/process-docx", {
+      const response = await fetch("https://ai-powered-data-extracter.onrender.com", {
         method: "POST",
         body: formData,
       });
