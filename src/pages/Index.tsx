@@ -14,7 +14,7 @@ const Index = () => {
   const [typewriterText, setTypewriterText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fullText = "Transform  Word documents into structured Excel reports with AI-powered task extraction and categorization";
+  const fullText = "Transform your Word documents into structured Excel reports with AI-powered task extraction and categorization";
 
   // Typewriter effect
   useEffect(() => {
@@ -51,40 +51,73 @@ const Index = () => {
     }
   };
 
-  const simulateProcessing = async () => {
-    setProcessing(true);
-    setProgress(0);
-    setError(null);
+  const processDocument = async () => {
+  if (!file) return;
 
-    const steps = [
-      { progress: 20, message: "Loading document..." },
-      { progress: 40, message: "Extracting task sentences..." },
-      { progress: 60, message: "Processing with AI..." },
-      { progress: 80, message: "Generating Excel structure..." },
-      { progress: 100, message: "Finalizing document..." }
-    ];
+  setProcessing(true);
+  setProgress(0);
+  setError(null);
 
-    for (const step of steps) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setProgress(step.progress);
-      toast({
-        title: "Processing",
-        description: step.message,
-      });
+  const progressSteps = [10, 30, 55, 75, 100];
+  let step = 0;
+  const progressInterval = setInterval(() => {
+    setProgress((prev) => {
+      if (step >= progressSteps.length) {
+        clearInterval(progressInterval);
+        return 100;
+      }
+      return progressSteps[step++];
+    });
+  }, 700);
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://localhost:5000/api/process-docx", {
+      method: "POST",
+      body: formData,
+    });
+
+    clearInterval(progressInterval);
+
+    if (!response.ok) {
+      throw new Error("Failed to process file");
     }
 
-    const excelFileName = file?.name?.replace('.docx', '.xlsx') || 'processed_document.xlsx';
-    setProcessedFile(excelFileName);
-    setProcessing(false);
-    
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const filename = file.name.replace(".docx", ".xlsx");
+
+    setProcessedFile(url);
+    setProgress(100);
     toast({
-      title: "Processing complete!",
+      title: "Processing Complete",
       description: "Your Excel document is ready for download",
     });
-  };
+
+  } catch (err) {
+    setError("Processing failed. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to process document",
+      variant: "destructive",
+    });
+  } finally {
+    setProcessing(false);
+  }
+};
+
 
   const handleDownload = async () => {
     if (!processedFile) return;
+  const link = document.createElement("a");
+  link.href = processedFile;
+  link.download = file?.name.replace(".docx", ".xlsx") || "processed.xlsx";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(processedFile);
     
     try {
       // Create proper Excel file using XLSX library approach
@@ -252,7 +285,7 @@ TOTAL,,11000,,,,,`;
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <Button onClick={simulateProcessing} className="hover-scale bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 text-lg">
+                      <Button onClick={processDocument} className="hover-scale bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 text-lg">
                         <Sparkles className="h-5 w-5 mr-2" />
                         Process Document
                       </Button>
