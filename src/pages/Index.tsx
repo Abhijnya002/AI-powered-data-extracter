@@ -382,7 +382,6 @@
 // // };
 
 // // export default Index;
-
 import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Download, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, ArrowDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -390,113 +389,108 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 
+const [typewriterText, setTypewriterText] = useState('');
+const fullText = "Transform Word documents into structured Excel reports with AI-powered task extraction and categorization";
+
+useEffect(() => {
+  let index = 0;
+  const timer = setInterval(() => {
+    if (index < fullText.length) {
+      setTypewriterText(fullText.slice(0, index + 1));
+      index++;
+    } else {
+      clearInterval(timer);
+    }
+  }, 50);
+
+  return () => clearInterval(timer);
+}, []);
+
 const Index = () => {
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [processedFile, setProcessedFile] = useState<{url: string, filename: string} | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [typewriterText, setTypewriterText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const fullText = "Transform your Word documents into structured Excel reports with AI-powered task extraction and categorization";
-
-  // Typewriter effect
-  useEffect(() => {
-    let index = 0;
-    const timer = setInterval(() => {
-      if (index < fullText.length) {
-        setTypewriterText(fullText.slice(0, index + 1));
-        index++;
-      } else {
-        clearInterval(timer);
-      }
-    }, 50);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0];
     if (uploadedFile && uploadedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       setFile(uploadedFile);
       setError(null);
-      setProcessedFile(null);
       toast({
-        title: "File uploaded successfully",
+        title: "File uploaded",
         description: `${uploadedFile.name} is ready for processing`,
       });
     } else {
-      setError('Please upload a valid Word document (.docx)');
+      setError('Please upload a valid .docx file');
       toast({
-        title: "Invalid file type",
-        description: "Please upload a .docx file",
+        title: "Invalid file",
+        description: "Only .docx files are supported",
         variant: "destructive",
       });
     }
   };
 
-  // Update the processDocument function in your existing Index.tsx:
-const processDocument = async () => {
-  if (!file) return;
-  
-  setProcessing(true);
-  setProgress(0);
-  setError(null);
+  const processDocument = async () => {
+    if (!file) return;
+    
+    setProcessing(true);
+    setProgress(0);
+    setError(null);
 
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    // Progress simulation
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        const next = prev + 20;
-        if (next >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return next;
+      // Progress simulation
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          const next = prev + 20;
+          if (next >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return next;
+        });
+      }, 500);
+
+      const response = await fetch('http://localhost:5000/api/process-docx', {
+        method: 'POST',
+        body: formData,
       });
-    }, 1500);
 
-    const response = await fetch('/api/process-docx', {
-      method: 'POST',
-      body: file, // Send file directly
-    });
+      clearInterval(progressInterval);
 
-    clearInterval(progressInterval);
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Failed to process document');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      setProcessedFile({
+        url,
+        filename: `processed_${file.name.replace('.docx', '.xlsx')}`
+      });
+      
+      toast({
+        title: "Success!",
+        description: "Document processed successfully",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Processing failed');
+      toast({
+        title: "Error",
+        description: "Failed to process document",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
     }
+  };
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    
-    setProcessedFile({
-      url,
-      filename: `processed_${file.name.replace('.docx', '.xlsx')}`
-    });
-    
-    toast({
-      title: "Processing complete!",
-      description: "Your Excel document is ready for download",
-    });
-  } catch (err) {
-    console.error('Processing error:', err);
-    setError(err instanceof Error ? err.message : 'Failed to process document');
-    toast({
-      title: "Processing failed",
-      description: "There was an error processing your document",
-      variant: "destructive",
-    });
-  } finally {
-    setProcessing(false);
-    setProgress(100);
-  }
-};
   const handleDownload = () => {
     if (!processedFile) return;
     
@@ -506,11 +500,7 @@ const processDocument = async () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    toast({
-      title: "Download started",
-      description: "Your processed Excel file is downloading",
-    });
+    URL.revokeObjectURL(processedFile.url); 
   };
   
   const resetUpload = () => {
