@@ -14,7 +14,7 @@ const Index = () => {
   const [typewriterText, setTypewriterText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fullText = "Transform your Word documents into structured Excel reports with AI-powered task extraction and categorization";
+  const fullText = "Transform  Word documents into structured Excel reports with AI-powered task extraction and categorization";
 
   // Typewriter effect
   useEffect(() => {
@@ -74,7 +74,7 @@ const Index = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("https://ai-powered-data-extracter.onrender.com", {
+      const response = await fetch("https://ai-powered-data-extracter.onrender.com/api/process-docx", {
         method: "POST",
         body: formData,
       });
