@@ -6,6 +6,8 @@ import tempfile
 import re
 import os
 from openpyxl import Workbook
+from flask_cors import CORS
+CORS(app)
 
 app = Flask(__name__)
 

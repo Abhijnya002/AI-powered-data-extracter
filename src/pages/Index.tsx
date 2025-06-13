@@ -14,7 +14,7 @@ const Index = () => {
   const [typewriterText, setTypewriterText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fullText = "Transform  Word documents into structured Excel reports with AI-powered task extraction and categorization";
+  const fullText = "Transform Your Word documents into structured Excel reports with AI-powered task extraction and categorization";
 
   // Typewriter effect
   useEffect(() => {
@@ -79,6 +79,7 @@ const Index = () => {
         body: formData,
       });
       clearInterval(progressInterval);
+      
 
 const contentType = response.headers.get("content-type") || "";
 
@@ -93,19 +94,24 @@ if (!response.ok) {
 
 if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
   const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.name.replace(".docx", ".xlsx");
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+const url = window.URL.createObjectURL(blob);
 
-  toast({
-    title: "Processing Complete",
-    description: "Your Excel document has been downloaded",
-  });
+const a = document.createElement("a");
+a.href = url;
+a.download = file.name.replace(".docx", ".xlsx");
+document.body.appendChild(a);
+a.click();
+a.remove();
+
+// ✅ Set the state after defining url
+setProcessedFile({
+  url,
+  filename: file.name.replace(".docx", ".xlsx")
+});
+toast({
+  title: "Processing Complete",
+  description: "Your Excel document has been downloaded",
+});
 } else {
   throw new Error("Unexpected response type from server");
 }
