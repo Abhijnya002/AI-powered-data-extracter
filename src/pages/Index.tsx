@@ -87,20 +87,19 @@ const Index = () => {
       }
 
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const filename = file.name.replace(".docx", ".xlsx");
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = file.name.replace(".docx", ".xlsx");
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
 
-      setProcessedFile({
-        url,
-        filename,
-      });
-
-      setProgress(100);
-
-      toast({
-        title: "Processing Complete",
-        description: "Your Excel document is ready for download",
-      });
+toast({
+  title: "Processing Complete",
+  description: "Your Excel document has been downloaded",
+});
     } catch (err) {
       setError("Processing failed. Please try again.");
       toast({
