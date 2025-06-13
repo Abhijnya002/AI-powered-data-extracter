@@ -88,13 +88,12 @@ const Index = () => {
 
       const blob = await response.blob();
 const url = window.URL.createObjectURL(blob);
-const a = document.createElement("a");
-a.href = url;
-a.download = file.name.replace(".docx", ".xlsx");
-document.body.appendChild(a);
-a.click();
-a.remove();
-URL.revokeObjectURL(url);
+setProcessedFile({
+  url,
+  filename: file.name.replace(".docx", ".xlsx"),
+});
+
+
 
 toast({
   title: "Processing Complete",
@@ -114,14 +113,16 @@ toast({
 
   const handleDownload = () => {
     if (!processedFile) return;
-    const link = document.createElement("a");
-    link.href = processedFile.url;
-    link.download = processedFile.filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    const a = document.createElement("a");
+    a.href = processedFile.url;
+    a.download = processedFile.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     URL.revokeObjectURL(processedFile.url);
   };
+  
+
 
   const resetUpload = () => {
     setFile(null);

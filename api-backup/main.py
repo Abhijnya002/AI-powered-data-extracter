@@ -53,7 +53,8 @@ def process_doc():
         output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx").name
         wb.save(output_path)
 
-        return send_file(output_path, as_attachment=True, download_name="ai_output.xlsx")
+        return send_file(output_path, as_attachment=True, download_name="ai_output.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 
     except Exception as e:
         return {"error": str(e)}, 500
