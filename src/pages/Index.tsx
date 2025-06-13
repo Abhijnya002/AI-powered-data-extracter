@@ -73,50 +73,50 @@ const Index = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-
-      const response = await fetch("https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev/process_doc", {
+    
+      const response = await fetch("https://YOUR_BACKEND_URL/process_doc", {
         method: "POST",
         body: formData,
       });
+    
       clearInterval(progressInterval);
-      
-
-const contentType = response.headers.get("content-type") || "";
-
-if (!response.ok) {
-  if (contentType.includes("application/json")) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Unknown error from server");
-  } else {
-    throw new Error("Failed to process file");
-  }
-}
-
-if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-  const blob = await response.blob();
-const url = window.URL.createObjectURL(blob);
-
-const a = document.createElement("a");
-a.href = url;
-a.download = file.name.replace(".docx", ".xlsx");
-document.body.appendChild(a);
-a.click();
-a.remove();
-
-// ✅ Set the state after defining url
-setProcessedFile({
-  url,
-  filename: file.name.replace(".docx", ".xlsx")
-});
-toast({
-  title: "Processing Complete",
-  description: "Your Excel document has been downloaded",
-});
-} else {
-  throw new Error("Unexpected response type from server");
-}
-      
- 
+    
+      const contentType = response.headers.get("content-type") || "";
+    
+      if (!response.ok) {
+        if (contentType.includes("application/json")) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Unknown error from server");
+        } else {
+          throw new Error("Failed to process file");
+        }
+      }
+    
+      if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+        const fileBlob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(fileBlob);
+    
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = file.name.replace(".docx", ".xlsx");
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    
+        setProcessedFile({
+          url: blobUrl,
+          filename: file.name.replace(".docx", ".xlsx"),
+        });
+    
+        toast({
+          title: "Processing Complete",
+          description: "Your Excel document has been downloaded",
+        });
+      } else {
+        throw new Error("Unexpected response type from server");
+      }
+    
+    // 👇👇👇 THIS is where the try block ends
     } catch (err) {
       setError("Processing failed. Please try again.");
       toast({
@@ -127,6 +127,7 @@ toast({
     } finally {
       setProcessing(false);
     }
+    
   };
 
   const handleDownload = () => {

@@ -11,6 +11,11 @@ CORS(app)
 
 app = Flask(__name__)
 
+@app.route("/", methods=["GET"])
+def home():
+    return "✅ Replit API is live"
+
+
 @app.route("/process_doc", methods=["POST"])
 def process_doc():
     try:
