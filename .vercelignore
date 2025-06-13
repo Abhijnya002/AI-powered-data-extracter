@@ -1,4 +1,3 @@
-__pycache__/
-venv/
-transformers_cache/
-*.docx
+api/
+backend/
+*.py
