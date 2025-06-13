@@ -191,37 +191,39 @@
 # if __name__ == '__main__':
 #     port = int(os.environ.get("PORT", 10000))
 #     app.run(host='0.0.0.0', port=port)
-
-from flask import Flask, request, send_file
-from flask_cors import CORS
-import os
-from process_doc import (
-    load_transcript_text,
-    extract_task_sentences,
-    extract_all_budgets,
-    process_tasks,
-    save_structured_excel,
-)
+from flask import Flask, request, jsonify
+import tempfile
+import docx
+import re
+from transformers import pipeline
+import torch
 
 app = Flask(__name__)
-CORS(app)
 
-@app.route('/api/process-docx', methods=['POST'])
-def process_docx():
+@app.route('/process_doc', methods=['POST'])
+def process_doc():
     try:
         file = request.files['file']
-        input_path = f"/tmp/{file.filename}"  # 🔥 Use /tmp for serverless
-        file.save(input_path)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
+            file.save(temp_file.name)
+            temp_file_path = temp_file.name
 
-        transcript = load_transcript_text(input_path)
-        sentences = extract_task_sentences(transcript)
-        budgets = extract_all_budgets(transcript)
-        grouped, total = process_tasks(sentences, budgets, input_path)
+        doc = docx.Document(temp_file_path)
+        text = re.sub(r"\s+", " ", " ".join(p.text for p in doc.paragraphs)).strip()
+        tasks = [s for s in re.split(r'(?<=[.!?])\s+', text) if len(s.split()) > 4]
 
-        output_path = input_path.replace('.docx', '.xlsx')
-        save_structured_excel(grouped, total, output_path, input_path)
+        if not tasks:
+            return jsonify({"error": "No valid task sentences found."}), 400
 
-        return send_file(output_path, as_attachment=True)
+        summarizer = pipeline("summarization", model="t5-small", device=-1)
+        title_gen = pipeline("text2text-generation", model="t5-small", device=-1)
+
+        summary = summarizer(tasks[0], max_length=60, min_length=20, do_sample=False)[0]["summary_text"]
+        title = title_gen(f"Create a concise renovation title from: \"{tasks[0]}\"", max_length=20, do_sample=False)[0]["generated_text"]
+
+        return jsonify({"summary": summary, "title": title})
 
     except Exception as e:
-        return f"Error: {str(e)}", 500
+        return jsonify({"error": str(e)}), 500
+
+app.run(host='0.0.0.0', port=8080)

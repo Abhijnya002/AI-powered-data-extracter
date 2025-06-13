@@ -74,7 +74,7 @@ const Index = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/process-docx", {
+      const response = await fetch("https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev/process_docx", {
         method: "POST",
         body: formData,
       });
