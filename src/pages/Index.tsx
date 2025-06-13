@@ -78,27 +78,39 @@ const Index = () => {
         method: "POST",
         body: formData,
       });
-      
-      
       clearInterval(progressInterval);
 
-      if (!response.ok) {
-        throw new Error("Failed to process file");
-      }
+const contentType = response.headers.get("content-type") || "";
 
-      const blob = await response.blob();
-const url = window.URL.createObjectURL(blob);
-setProcessedFile({
-  url,
-  filename: file.name.replace(".docx", ".xlsx"),
-});
+if (!response.ok) {
+  if (contentType.includes("application/json")) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Unknown error from server");
+  } else {
+    throw new Error("Failed to process file");
+  }
+}
 
+if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name.replace(".docx", ".xlsx");
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 
-
-toast({
-  title: "Processing Complete",
-  description: "Your Excel document has been downloaded",
-});
+  toast({
+    title: "Processing Complete",
+    description: "Your Excel document has been downloaded",
+  });
+} else {
+  throw new Error("Unexpected response type from server");
+}
+      
+ 
     } catch (err) {
       setError("Processing failed. Please try again.");
       toast({
