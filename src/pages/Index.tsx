@@ -79,6 +79,7 @@ const Index = () => {
         body: formData,
       });
       
+      
       clearInterval(progressInterval);
 
       if (!response.ok) {

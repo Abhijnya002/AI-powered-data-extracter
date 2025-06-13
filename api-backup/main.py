@@ -200,6 +200,11 @@ import torch
 
 app = Flask(__name__)
 
+# ✅ Homepage route (optional, to fix GET / 404)
+@app.route("/", methods=["GET"])
+def home():
+    return "✅ API is running. Use POST /process_doc with a .docx file."
+
 @app.route('/process_doc', methods=['POST'])
 def process_doc():
     try:
