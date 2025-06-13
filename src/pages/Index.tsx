@@ -87,12 +87,23 @@ const Index = () => {
 console.log("RESPONSE HEADERS", [...response.headers]);
 
 if (!response.ok) {
-  throw new Error("Failed to process file");
+  const errorText = await response.text();
+  throw new Error("Failed to process file: " + errorText);
 }
 
 try {
   const blob = await response.blob();
-  if (blob.size === 0) throw new Error("Empty blob");
+  console.log("📦 Received blob:", blob);
+  console.log("📄 Blob type:", blob.type);
+  console.log("📏 Blob size:", blob.size);
+
+  // Check blob content
+  if (
+    blob.size === 0 ||
+    blob.type !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ) {
+    throw new Error("Received invalid file blob from backend.");
+  }
 
   const url = URL.createObjectURL(blob);
   const filename = file.name.replace(".docx", ".xlsx");
@@ -106,8 +117,14 @@ try {
   });
 } catch (e) {
   setError("Blob parsing failed");
-  console.error("Blob parse error:", e);
+  console.error("❌ Blob parse error:", e);
+  toast({
+    title: "Error",
+    description: String(e),
+    variant: "destructive",
+  });
 }
+
     } catch (err) {
       setError("Processing failed. Please try again.");
       toast({

@@ -72,7 +72,9 @@ def process_doc():
 
 
     except Exception as e:
-        return {"error": str(e)}, 500
+        print("❌ Backend error:", e)
+        return jsonify({"error": str(e)}), 500
+
 
 # Optional homepage to avoid 404 on /
 @app.route("/", methods=["GET"])
