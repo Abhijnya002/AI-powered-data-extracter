@@ -14,7 +14,7 @@ const Index = () => {
   const [typewriterText, setTypewriterText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fullText = "Transform Your Word documents into structured Excel reports with AI-powered task extraction and categorization";
+  const fullText = "Transform  Word documents into structured Excel reports with AI-powered task extraction and categorization";
 
   // Typewriter effect
   useEffect(() => {
@@ -53,11 +53,11 @@ const Index = () => {
 
   const processDocument = async () => {
     if (!file) return;
-  
+
     setProcessing(true);
     setProgress(0);
     setError(null);
-  
+
     const progressSteps = [10, 30, 55, 75, 100];
     let step = 0;
     const progressInterval = setInterval(() => {
@@ -69,53 +69,45 @@ const Index = () => {
         return progressSteps[step++];
       });
     }, 700);
-  
+
     try {
       const formData = new FormData();
       formData.append("file", file);
-  
+
       const response = await fetch("https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev/process_doc", {
         method: "POST",
         body: formData,
       });
-  
+      
+      
       clearInterval(progressInterval);
-  
-      const contentType = response.headers.get("content-type") || "";
-  
-      if (!response.ok) {
-        if (contentType.includes("application/json")) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Unknown error from server");
-        } else {
-          throw new Error("Failed to process file");
-        }
-      }
-  
-      if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-  
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name.replace(".docx", ".xlsx");
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-  
-        setProcessedFile({
-          url,
-          filename: file.name.replace(".docx", ".xlsx"),
-        });
-  
-        toast({
-          title: "Processing Complete",
-          description: "Your Excel document has been downloaded",
-        });
-      } else {
-        throw new Error("Unexpected response type from server");
-      }
-  
+
+      
+      console.log("RESPONSE STATUS", response.status);
+console.log("RESPONSE HEADERS", [...response.headers]);
+
+if (!response.ok) {
+  throw new Error("Failed to process file");
+}
+
+try {
+  const blob = await response.blob();
+  if (blob.size === 0) throw new Error("Empty blob");
+
+  const url = URL.createObjectURL(blob);
+  const filename = file.name.replace(".docx", ".xlsx");
+
+  setProcessedFile({ url, filename });
+  setProgress(100);
+
+  toast({
+    title: "Processing Complete",
+    description: "Your Excel document is ready for download",
+  });
+} catch (e) {
+  setError("Blob parsing failed");
+  console.error("Blob parse error:", e);
+}
     } catch (err) {
       setError("Processing failed. Please try again.");
       toast({
@@ -127,19 +119,17 @@ const Index = () => {
       setProcessing(false);
     }
   };
-  
+
   const handleDownload = () => {
     if (!processedFile) return;
-    const a = document.createElement("a");
-    a.href = processedFile.url;
-    a.download = processedFile.filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const link = document.createElement("a");
+    link.href = processedFile.url;
+    link.download = processedFile.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
     URL.revokeObjectURL(processedFile.url);
   };
-  
-
 
   const resetUpload = () => {
     setFile(null);

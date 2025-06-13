@@ -6,10 +6,11 @@ import tempfile
 import re
 import os
 from openpyxl import Workbook
+from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
-CORS(app)
 
 app = Flask(__name__)
+CORS(app, expose_headers=["Content-Disposition"])
 
 @app.route("/", methods=["GET"])
 def home():
