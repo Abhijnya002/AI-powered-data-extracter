@@ -1,7 +1,7 @@
 flask==2.3.3
 flask-cors==4.0.0
 transformers==4.35.0
-torch==2.0.1
+torch
 python-docx==0.8.11
 openpyxl==3.1.2
 pandas==2.1.1
