@@ -63,17 +63,23 @@ Built using **LLMs**, **Flask**, **React**, and **zero-GPU deployment**.
 ### 1. Clone the repo
 
 git clone https://github.com/your-username/ai-docx-excel-processor.git
+
 cd ai-docx-excel-processor
 
 ## 2. Backend Setup
 cd api/
+
 pip install -r requirements.txt
+
 python main.py
+
 Make sure to install transformers, flask, openpyxl, torch, and docx.
 
 ## 3. Frontend Setup
 cd client/
+
 npm install
+
 npm run dev
 
 ## 📦 Folder Structure
