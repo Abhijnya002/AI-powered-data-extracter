@@ -76,9 +76,10 @@ const Index = () => {
   
       console.log("🚀 Sending request to backend...");
       
-      // First, test if backend is reachable
-      const backendUrl = "https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev";
+      // Updated backend URL
+      const backendUrl = "https://bf508ab0-fd57-46a3-b3cb-36a7b59bc690-00-2pkzrgitnbf6j.pike.replit.dev";
       
+      // Test backend connection first
       try {
         console.log("🔍 Testing backend connection...");
         const healthCheck = await fetch(`${backendUrl}/health`, {
@@ -86,16 +87,21 @@ const Index = () => {
           mode: 'cors'
         });
         console.log("🏥 Health check response:", healthCheck.status);
+        
+        if (healthCheck.ok) {
+          const healthData = await healthCheck.json();
+          console.log("🏥 Health data:", healthData);
+        }
       } catch (healthError) {
         console.error("❌ Backend not reachable:", healthError);
         throw new Error("Backend server is not reachable. Please check if it's running.");
       }
       
+      // Send the document for processing
       const response = await fetch(`${backendUrl}/process_doc`, {
         method: "POST",
         body: formData,
         mode: 'cors',
-        // Remove headers to let browser set them automatically
       });
       
       clearInterval(progressInterval);
@@ -126,24 +132,6 @@ const Index = () => {
       // Validate response
       const contentType = response.headers.get('content-type');
       console.log("📄 Content type:", contentType);
-      
-      if (!contentType) {
-        throw new Error("No content type in response");
-      }
-  
-      // Check if it's actually an Excel file
-      if (!contentType.includes('spreadsheetml.sheet') && !contentType.includes('application/octet-stream')) {
-        // Might be an error response with wrong content type
-        try {
-          const text = await response.text();
-          console.log("📄 Response text:", text);
-          if (text.includes('error') || text.includes('Error')) {
-            throw new Error("Server returned an error instead of file");
-          }
-        } catch (textError) {
-          console.log("⚠️ Could not read response as text, proceeding...");
-        }
-      }
   
       const blob = await response.blob();
       console.log("📦 Received blob:", blob);
@@ -170,7 +158,7 @@ const Index = () => {
   
       // Create download URL
       const url = URL.createObjectURL(blob);
-      const filename = file.name.replace(".docx", ".xlsx");
+      const filename = file.name.replace(".docx", "_Processed.xlsx");
   
       setProcessedFile({ url, filename });
       setProgress(100);
