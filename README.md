@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# 🧠 AI-Powered DOCX-to-Excel Transcript Processor
 
-## Project info
+Transform unstructured `.docx` documents — like meeting transcripts, project logs, and renovation notes — into clean, structured, categorized Excel reports.  
+Built using **LLMs**, **Flask**, **React**, and **zero-GPU deployment**.
 
-**URL**: https://lovable.dev/projects/79451a7f-869c-46d4-8603-7cab03b30b17
+[🌐 Live Demo](https://ai-powered-data-extracter.vercel.app)
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+- 📄 Upload any `.docx` document
+- 🔍 Automatically extract:
+  - Task-like sentences
+  - Budget mentions
+  - Drawing references
+  - Responsible leads
+- 🪄 Generate clean **summaries** and **concise task titles** using LLMs
+- 📊 Export a **professionally styled Excel report** with:
+  - Categories
+  - Budgets
+  - Comments
+  - Drawing references and leads
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/79451a7f-869c-46d4-8603-7cab03b30b17) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Tech Stack
 
-**Use your preferred IDE**
+### Frontend
+- [React](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [ShadCN UI](https://ui.shadcn.dev/)
+- Hosted on [Vercel](https://vercel.com)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Backend
+- [Flask](https://flask.palletsprojects.com/) API
+- LLMs via [Hugging Face Transformers](https://huggingface.co/transformers/)
+  - Local: `flan-t5-base`, `distilbart-cnn-12-6`
+  - Deployed: `sshleifer/tiny-gpt2` (optimized for CPU-only hosting)
+- Hosted on [Replit](https://replit.com)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### NLP Fallbacks
+- Regex + zero-shot classification
+- Graceful degradation when LLMs are not available
 
-Follow these steps:
+### Excel Export
+- [openpyxl](https://openpyxl.readthedocs.io/) for Excel styling, categorization, and formatting
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🌟 Skills & Concepts Applied
 
-# Step 3: Install the necessary dependencies.
-npm i
+- LLM prompt engineering & text generation
+- Lightweight AI deployment (no GPU required)
+- End-to-end full-stack development (frontend, backend, model inference, data export)
+- AI UX: progress handling, fallbacks, and async flow
+- Optimizing model behavior in **resource-constrained environments**
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 🚀 Run Locally
+
+### 1. Clone the repo
+
+git clone https://github.com/your-username/ai-docx-excel-processor.git
+cd ai-docx-excel-processor
+
+##2. Backend Setup
+cd api/
+pip install -r requirements.txt
+python main.py
+Make sure to install transformers, flask, openpyxl, torch, and docx.
+
+##3. Frontend Setup
+cd client/
+npm install
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+##📦 Folder Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+.
+├── api/               # Flask backend with LLM and processing logic
+├── client/            # React + Tailwind frontend
+├── README.md
+└── ...
 
-**Use GitHub Codespaces**
+##📄 Sample Use Cases
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Meeting minutes → structured Excel with tasks + budgets
+Renovation transcripts → cost-based categorized scope of work
+Project notes → summarized deliverables and stakeholder responsibilities
+Legal docs → extract action items and references
 
-## What technologies are used for this project?
+##🙏 Acknowledgements
 
-This project is built with:
+Huge thanks to:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+🤗 Hugging Face
+🧠 OpenAI
+💻 Replit
+🚀 Vercel
+🧩 Open-source and frontend/UI/AI communities
+📬 Contact
 
-## How can I deploy this project?
+Built by Abhijnya K G.
+Feel free to reach out or open an issue — collaboration and feedback always welcome!
 
-Simply open [Lovable](https://lovable.dev/projects/79451a7f-869c-46d4-8603-7cab03b30b17) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
