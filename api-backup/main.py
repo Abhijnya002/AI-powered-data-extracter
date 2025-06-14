@@ -83,6 +83,7 @@
 
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=8080)
+
 from flask import Flask, request, send_file, jsonify
 from transformers import pipeline
 import torch
@@ -94,43 +95,86 @@ from openpyxl import Workbook
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, expose_headers=["Content-Disposition"])
 
-# Initialize models at startup to avoid loading them repeatedly
+# Enhanced CORS configuration
+CORS(app, 
+     origins=["*"],  # Allow all origins for now
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type"],
+     expose_headers=["Content-Disposition"],
+     supports_credentials=False)
+
+# Handle preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
+
+# Initialize models at startup
 print("🔄 Loading AI models...")
+summarizer = None
+title_gen = None
+
 try:
-    summarizer = pipeline("summarization", model="t5-small", device=0 if torch.cuda.is_available() else -1)
-    title_gen = pipeline("text2text-generation", model="t5-small", device=0 if torch.cuda.is_available() else -1)
+    summarizer = pipeline("summarization", model="t5-small", device=-1)  # Force CPU
+    title_gen = pipeline("text2text-generation", model="t5-small", device=-1)  # Force CPU
     print("✅ Models loaded successfully")
 except Exception as e:
     print(f"❌ Error loading models: {e}")
-    summarizer = None
-    title_gen = None
 
 @app.route("/", methods=["GET"])
 def home():
     return "✅ AI DOCX Processor is running!"
 
-@app.route("/process_doc", methods=["POST"])
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "models_loaded": bool(summarizer and title_gen),
+        "cuda_available": torch.cuda.is_available(),
+        "timestamp": os.environ.get('REPL_ID', 'unknown')
+    })
+
+@app.route("/process_doc", methods=["POST", "OPTIONS"])
 def process_doc():
+    # Handle preflight request
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "ok"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+    
     temp_file_path = None
     output_path = None
     
     try:
+        print("📨 Received request")
+        
         # Check if models are loaded
         if not summarizer or not title_gen:
+            print("❌ Models not loaded")
             return jsonify({"error": "AI models not loaded properly"}), 500
             
         uploaded_file = request.files.get("file")
-        if not uploaded_file or not uploaded_file.filename.endswith(".docx"):
-            return jsonify({"error": "Invalid file. Please upload a .docx file."}), 400
+        if not uploaded_file:
+            print("❌ No file uploaded")
+            return jsonify({"error": "No file uploaded"}), 400
+            
+        if not uploaded_file.filename.endswith(".docx"):
+            print("❌ Invalid file type")
+            return jsonify({"error": "Invalid file type. Please upload a .docx file."}), 400
+
+        print(f"📄 Processing file: {uploaded_file.filename}")
 
         # Save uploaded docx to a temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
             uploaded_file.save(temp_file)
             temp_file_path = temp_file.name
-
-        print(f"📄 Processing file: {uploaded_file.filename}")
 
         # Extract text
         doc = docx.Document(temp_file_path)
@@ -146,21 +190,18 @@ def process_doc():
 
         print(f"📊 Found {len(tasks)} task sentences")
 
-        # Generate AI content with error handling
+        # Simple processing without AI if models fail
         try:
-            # Use the first substantial task for summary
-            main_task = tasks[0][:512]  # Limit input length for T5
-            
+            main_task = tasks[0][:512]
             summary_result = summarizer(main_task, max_length=60, min_length=20, do_sample=False)
-            summary = summary_result[0]["summary_text"] if summary_result else "Summary generation failed"
+            summary = summary_result[0]["summary_text"] if summary_result else text[:200]
             
-            title_prompt = f"Create a concise renovation title: {main_task[:100]}"
+            title_prompt = f"Create title: {main_task[:100]}"
             title_result = title_gen(title_prompt, max_length=20, do_sample=False)
-            title = title_result[0]["generated_text"] if title_result else "Title generation failed"
+            title = title_result[0]["generated_text"] if title_result else uploaded_file.filename.replace('.docx', '')
             
         except Exception as ai_error:
-            print(f"❌ AI processing error: {ai_error}")
-            # Fallback to simple text processing
+            print(f"⚠️ AI processing failed, using fallback: {ai_error}")
             summary = text[:200] + "..." if len(text) > 200 else text
             title = uploaded_file.filename.replace('.docx', ' - Processed')
 
@@ -169,7 +210,6 @@ def process_doc():
         ws = wb.active
         ws.title = "AI Extracted Data"
         
-        # Add headers and content
         ws.append(["Generated Title"])
         ws.append([title])
         ws.append([])
@@ -178,22 +218,19 @@ def process_doc():
         ws.append([])
         ws.append(["Extracted Sentences"])
         
-        # Add up to 10 sentences
         for sentence in tasks[:10]:
             if sentence.strip():
                 ws.append([sentence.strip()])
 
-        # Create output file
         output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx").name
         wb.save(output_path)
         
         print(f"✅ Excel file created: {output_path}")
 
-        # Verify file was created and has content
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             return jsonify({"error": "Failed to create Excel file"}), 500
 
-        # Send file with proper headers
+        # Create response with proper headers
         response = send_file(
             output_path,
             as_attachment=True,
@@ -212,24 +249,12 @@ def process_doc():
         return jsonify({"error": f"Processing failed: {str(e)}"}), 500
         
     finally:
-        # Cleanup temporary files
+        # Cleanup
         try:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
-            if output_path and os.path.exists(output_path):
-                # Don't delete output_path immediately as it's being sent
-                # Flask will handle cleanup after sending
-                pass
         except Exception as cleanup_error:
             print(f"⚠️ Cleanup error: {cleanup_error}")
 
-@app.route("/health", methods=["GET"])
-def health_check():
-    return jsonify({
-        "status": "healthy",
-        "models_loaded": bool(summarizer and title_gen),
-        "cuda_available": torch.cuda.is_available()
-    })
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=False)
+    app.run(host="0.0.0.0", port=8080, debug=True)

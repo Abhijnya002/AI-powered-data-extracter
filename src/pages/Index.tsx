@@ -76,55 +76,72 @@ const Index = () => {
   
       console.log("🚀 Sending request to backend...");
       
-      const response = await fetch("https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev/process_doc", {
+      // First, test if backend is reachable
+      const backendUrl = "https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev";
+      
+      try {
+        console.log("🔍 Testing backend connection...");
+        const healthCheck = await fetch(`${backendUrl}/health`, {
+          method: "GET",
+          mode: 'cors'
+        });
+        console.log("🏥 Health check response:", healthCheck.status);
+      } catch (healthError) {
+        console.error("❌ Backend not reachable:", healthError);
+        throw new Error("Backend server is not reachable. Please check if it's running.");
+      }
+      
+      const response = await fetch(`${backendUrl}/process_doc`, {
         method: "POST",
         body: formData,
-        headers: {
-          // Don't set Content-Type - let browser set it with boundary for FormData
-        },
+        mode: 'cors',
+        // Remove headers to let browser set them automatically
       });
       
       clearInterval(progressInterval);
   
       console.log("📡 Response status:", response.status);
-      console.log("📋 Response headers:", [...response.headers]);
+      console.log("📋 Response headers:", Object.fromEntries(response.headers));
   
       if (!response.ok) {
-        // Try to get error message from JSON response
-        let errorMessage = "Failed to process file";
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        // Try to get detailed error message
         try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (jsonError) {
-          // If JSON parsing fails, try to get text
-          try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } else {
             const errorText = await response.text();
-            if (errorText) {
-              errorMessage = errorText;
-            }
-          } catch (textError) {
-            console.error("❌ Could not parse error response:", textError);
+            errorMessage = errorText || errorMessage;
           }
+        } catch (parseError) {
+          console.error("❌ Could not parse error response:", parseError);
         }
+        
         throw new Error(errorMessage);
       }
   
-      // Check if response is actually a file
+      // Validate response
       const contentType = response.headers.get('content-type');
       console.log("📄 Content type:", contentType);
       
-      if (!contentType || !contentType.includes('spreadsheetml.sheet')) {
-        // Response might be JSON error even with 200 status
+      if (!contentType) {
+        throw new Error("No content type in response");
+      }
+  
+      // Check if it's actually an Excel file
+      if (!contentType.includes('spreadsheetml.sheet') && !contentType.includes('application/octet-stream')) {
+        // Might be an error response with wrong content type
         try {
-          const jsonResponse = await response.json();
-          if (jsonResponse.error) {
-            throw new Error(jsonResponse.error);
+          const text = await response.text();
+          console.log("📄 Response text:", text);
+          if (text.includes('error') || text.includes('Error')) {
+            throw new Error("Server returned an error instead of file");
           }
-        } catch (jsonError) {
-          // If it's not JSON, proceed with blob
-          console.log("⚠️ Unexpected content type, proceeding with blob...");
+        } catch (textError) {
+          console.log("⚠️ Could not read response as text, proceeding...");
         }
       }
   
@@ -136,6 +153,19 @@ const Index = () => {
       // Validate blob
       if (blob.size === 0) {
         throw new Error("Received empty file from server");
+      }
+  
+      if (blob.size < 1000) {
+        // Suspiciously small file, might be an error message
+        try {
+          const text = await blob.text();
+          console.log("📄 Small blob content:", text);
+          if (text.includes('error') || text.includes('Error')) {
+            throw new Error(text);
+          }
+        } catch (textError) {
+          console.log("⚠️ Could not read small blob as text");
+        }
       }
   
       // Create download URL
@@ -152,10 +182,19 @@ const Index = () => {
   
     } catch (err) {
       console.error("❌ Processing error:", err);
-      setError(err.message || "Processing failed. Please try again.");
+      
+      let errorMessage = "Processing failed. Please try again.";
+      
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        errorMessage = "Cannot connect to server. Please check your internet connection and try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: err.message || "Failed to process document",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -163,7 +202,6 @@ const Index = () => {
       clearInterval(progressInterval);
     }
   };
-
   const handleDownload = () => {
     if (!processedFile) return;
     const link = document.createElement("a");
