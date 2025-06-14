@@ -53,11 +53,11 @@ const Index = () => {
 
   const processDocument = async () => {
     if (!file) return;
-
+  
     setProcessing(true);
     setProgress(0);
     setError(null);
-
+  
     const progressSteps = [10, 30, 55, 75, 100];
     let step = 0;
     const progressInterval = setInterval(() => {
@@ -69,71 +69,98 @@ const Index = () => {
         return progressSteps[step++];
       });
     }, 700);
-
+  
     try {
       const formData = new FormData();
       formData.append("file", file);
-
+  
+      console.log("🚀 Sending request to backend...");
+      
       const response = await fetch("https://4e2d53af-a301-4801-89cb-8d81786377e3-00-3brjc6b9ybew5.sisko.replit.dev/process_doc", {
         method: "POST",
         body: formData,
+        headers: {
+          // Don't set Content-Type - let browser set it with boundary for FormData
+        },
       });
       
-      
       clearInterval(progressInterval);
-
+  
+      console.log("📡 Response status:", response.status);
+      console.log("📋 Response headers:", [...response.headers]);
+  
+      if (!response.ok) {
+        // Try to get error message from JSON response
+        let errorMessage = "Failed to process file";
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (jsonError) {
+          // If JSON parsing fails, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch (textError) {
+            console.error("❌ Could not parse error response:", textError);
+          }
+        }
+        throw new Error(errorMessage);
+      }
+  
+      // Check if response is actually a file
+      const contentType = response.headers.get('content-type');
+      console.log("📄 Content type:", contentType);
       
-      console.log("RESPONSE STATUS", response.status);
-console.log("RESPONSE HEADERS", [...response.headers]);
-
-if (!response.ok) {
-  const errorText = await response.text();
-  throw new Error("Failed to process file: " + errorText);
-}
-
-try {
-  const blob = await response.blob();
-  console.log("📦 Received blob:", blob);
-  console.log("📄 Blob type:", blob.type);
-  console.log("📏 Blob size:", blob.size);
-
-  // Check blob content
-  if (
-    blob.size === 0 ||
-    blob.type !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  ) {
-    throw new Error("Received invalid file blob from backend.");
-  }
-
-  const url = URL.createObjectURL(blob);
-  const filename = file.name.replace(".docx", ".xlsx");
-
-  setProcessedFile({ url, filename });
-  setProgress(100);
-
-  toast({
-    title: "Processing Complete",
-    description: "Your Excel document is ready for download",
-  });
-} catch (e) {
-  setError("Blob parsing failed");
-  console.error("❌ Blob parse error:", e);
-  toast({
-    title: "Error",
-    description: String(e),
-    variant: "destructive",
-  });
-}
-
+      if (!contentType || !contentType.includes('spreadsheetml.sheet')) {
+        // Response might be JSON error even with 200 status
+        try {
+          const jsonResponse = await response.json();
+          if (jsonResponse.error) {
+            throw new Error(jsonResponse.error);
+          }
+        } catch (jsonError) {
+          // If it's not JSON, proceed with blob
+          console.log("⚠️ Unexpected content type, proceeding with blob...");
+        }
+      }
+  
+      const blob = await response.blob();
+      console.log("📦 Received blob:", blob);
+      console.log("📄 Blob type:", blob.type);
+      console.log("📏 Blob size:", blob.size);
+  
+      // Validate blob
+      if (blob.size === 0) {
+        throw new Error("Received empty file from server");
+      }
+  
+      // Create download URL
+      const url = URL.createObjectURL(blob);
+      const filename = file.name.replace(".docx", ".xlsx");
+  
+      setProcessedFile({ url, filename });
+      setProgress(100);
+  
+      toast({
+        title: "Processing Complete! 🎉",
+        description: "Your Excel document is ready for download",
+      });
+  
     } catch (err) {
-      setError("Processing failed. Please try again.");
+      console.error("❌ Processing error:", err);
+      setError(err.message || "Processing failed. Please try again.");
       toast({
         title: "Error",
-        description: "Failed to process document",
+        description: err.message || "Failed to process document",
         variant: "destructive",
       });
     } finally {
       setProcessing(false);
+      clearInterval(progressInterval);
     }
   };
 
