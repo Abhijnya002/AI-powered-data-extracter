@@ -1,3 +1,4 @@
+
 # 🧠 AI-Powered DOCX-to-Excel Transcript Processor
 
 Transform unstructured `.docx` documents — like meeting transcripts, project logs, and renovation notes — into clean, structured, categorized Excel reports.  
@@ -48,7 +49,7 @@ Built using **LLMs**, **Flask**, **React**, and **zero-GPU deployment**.
 
 ---
 
-## 🌟 Skills & Concepts Applied
+## 🌟 Skills & Concepts Learnt
 
 - LLM prompt engineering & text generation
 - Lightweight AI deployment (no GPU required)
@@ -58,56 +59,71 @@ Built using **LLMs**, **Flask**, **React**, and **zero-GPU deployment**.
 
 ---
 
-## 🚀 Run Locally
+## 🚀 Getting Started
 
-### 1. Clone the repo
+### 1. Clone the Repo
 
+```bash
 git clone https://github.com/your-username/ai-docx-excel-processor.git
-
 cd ai-docx-excel-processor
+```
 
-## 2. Backend Setup
+### 2. Backend Setup
+
+```bash
 cd api/
-
 pip install -r requirements.txt
-
 python main.py
+```
 
-Make sure to install transformers, flask, openpyxl, torch, and docx.
+> Make sure the following libraries are installed:  
+> `transformers`, `flask`, `openpyxl`, `torch`, `python-docx`
 
-## 3. Frontend Setup
+### 3. Frontend Setup
+
+```bash
 cd client/
-
 npm install
-
 npm run dev
+```
+
+---
 
 ## 📦 Folder Structure
 
+```
 .
 ├── api/               # Flask backend with LLM and processing logic
 ├── client/            # React + Tailwind frontend
 ├── README.md
 └── ...
+```
+
+---
 
 ## 📄 Sample Use Cases
 
-Meeting minutes → structured Excel with tasks + budgets
-Renovation transcripts → cost-based categorized scope of work
-Project notes → summarized deliverables and stakeholder responsibilities
-Legal docs → extract action items and references
+- 🗓️ Meeting minutes → structured Excel with tasks + budgets  
+- 🛠️ Renovation transcripts → cost-based categorized scope of work  
+- 📋 Project notes → summarized deliverables and stakeholder responsibilities  
+- ⚖️ Legal docs → extract action items and references  
+
+---
 
 ## 🙏 Acknowledgements
 
 Huge thanks to:
 
-🤗 Hugging Face
-🧠 OpenAI
-💻 Replit
-🚀 Vercel
-🧩 Open-source and frontend/UI/AI communities
-📬 Contact
+- 🤗 [Hugging Face](https://huggingface.co/)  
+- 🧠 [OpenAI](https://openai.com/)  
+- 💻 [Replit](https://replit.com/)  
+- 🚀 [Vercel](https://vercel.com/)  
+- 🧩 The amazing open-source and frontend/UI/AI communities  
 
-Built by Abhijnya K G.
+---
+
+## 📬 Contact
+
+Built by **Abhijnya K G**  
 Feel free to reach out or open an issue — collaboration and feedback always welcome!
 
